@@ -65,7 +65,7 @@ class LZW : StringCompressor<LZWData>
 
     public LZWData compress(string data)
     {
-        List<string> dictionary = new List<string>();
+        
         string wynik = "";
         string roboczy = data;
         string znak = "";
@@ -73,11 +73,13 @@ class LZW : StringCompressor<LZWData>
         for (int x = 0; roboczy.Length > 0; x++)
         {
             znak = roboczy.Substring(x, x + 1);
-            if (!dictionary.Contains(znak))
+            if (!dict.Contains(znak))
             {
-                dictionary.Add(znak);
+                addCode(znak);
             }
         }
+
+        List<string> dictionary = dict.ToList();
         int sequenceLength = 2;
         int nrIndex = 0;
         do
@@ -101,32 +103,16 @@ class LZW : StringCompressor<LZWData>
         return new LZWData(String.Join(" ", resultCode), dictionary);
     }
 
-    public string decompress(LZWData data)
+    public string decompress(string data)
     {
         if(data.compressedData == null | data.compressedData.Length==0)
         {
             throw new Exception("No data to decompress!");
         }
-        if (data.compressionDict == null | data.compressionDict.Count < 2)
-        {
-            throw new Exception("Dictionary null or too short!");
-        }
+        
         Console.WriteLine("Compressed data passed validation");
 
         //Inicjalizacja slownika jednoznakowego
-        if (data.compressionDict.Any(x => x.Length > 1))
-        {
-            List<string> dict = data.compressionDict.Where(x => x.Length == 1).ToList();
-        } else
-        {
-            List<string> dict = data.compressionDict;
-        }
-
-        foreach (string key in data.compressionDict)
-        {
-            addCode(key);
-        }
-
         List<string> workingDict = dict.ToList();
         string compressedData = data.compressedData;
 
