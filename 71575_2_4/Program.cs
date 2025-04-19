@@ -65,7 +65,6 @@ class LZW : StringCompressor<LZWData>
 
     public LZWData compress(string data)
     {
-        
         string wynik = "";
         string roboczy = data;
         string znak = "";
@@ -82,20 +81,39 @@ class LZW : StringCompressor<LZWData>
         List<string> dictionary = dict.ToList();
         int sequenceLength = 2;
         int nrIndex = 0;
+
         do
         {
             znak = roboczy.Substring(0, sequenceLength);
-            for (; dictionary.Contains(znak); sequenceLength++)
+            while (dictionary.Contains(znak))
             {
+                sequenceLength++;
+                if (sequenceLength > roboczy.Length)
+                {
+                    break
+                }
                 znak = roboczy.Substring(0, sequenceLength);
             }
+
             nrIndex = dictionary.IndexOf(roboczy.Substring(0, sequenceLength - 1));
-            wynik += nrIndex;
+            wynik += nrIndex.ToString() + " ";
+            if (sequenceLength > roboczy.Length)
+            {
+                break
+            }
             dictionary.Add(znak);
             roboczy.Remove(0, sequenceLength - 1);
             sequenceLength = 2;
+
         }
         while (roboczy.Length >= sequenceLength)
+
+        if (roboczy.Length == 1)
+        {
+            znak = roboczy.Substring(0, 1);
+            nrIndex = dictionary.IndexOf(roboczy.Substring(0, 1));
+            wynik += nrIndex;
+        }
 
 
         while (pozostaly.Length > 0);
@@ -109,21 +127,47 @@ class LZW : StringCompressor<LZWData>
         {
             throw new Exception("No data to decompress!");
         }
+        if(!data.All(n=>Char.IsDigit(n) & Char.IsWhiteSpace(n)))
+        {
+            throw new Exception("Must be digits and whitespaces!");
+        }
         
         Console.WriteLine("Compressed data passed validation");
 
         //Inicjalizacja slownika jednoznakowego
         List<string> workingDict = dict.ToList();
-        string compressedData = data.compressedData;
 
+        List<string> codes = data.Split(" ").ToList();
 
+        string result = "";
 
+        while (codes.Count>0)
+        {
+            int code1 = int.Parse(codes[0]);
+            int code2 = int.Parse(codes[1]);
+            string word1 = workingDict[code1];
+            string word2 = "";
+            result = string.Concat(result, word1);
 
-        
-        
+            try //ababab case
+            {
+                word2 = workingDict[code2];
+            } catch (ArgumentOutOfRangeException e) {
+                word2 = word1;
+            }
 
+            if (!workingDict.Contains(string.Concat(word1, word2[0])))
+            {
+                workingDict.Add()
+            } else
+            {
+                Console.WriteLine("waht");
+            }
 
-         return "";
+            codes.RemoveAt(0);
+
+        }
+         return result;
     }
 }
 
