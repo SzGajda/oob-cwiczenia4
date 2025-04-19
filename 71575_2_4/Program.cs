@@ -71,7 +71,7 @@ class LZW : StringCompressor
             }
         }
 
-        List<string> dictionary = dict.ToList();
+        List<string> dictionary = dict.Where(n=>n!=null).ToList();
         int sequenceLength = 2;
         int nrIndex = 0;
 
@@ -95,7 +95,7 @@ class LZW : StringCompressor
                 break;
             }
             dictionary.Add(znak);
-            roboczy.Remove(0, sequenceLength - 1);
+            roboczy = roboczy.Remove(0, sequenceLength - 1);
             sequenceLength = 2;
 
         } while (roboczy.Length >= sequenceLength);
@@ -117,7 +117,7 @@ class LZW : StringCompressor
         {
             throw new Exception("No data to decompress!");
         }
-        if(!data.All(n=>Char.IsDigit(n) & Char.IsWhiteSpace(n)))
+        if(data.ToList().Any(n=>!Char.IsDigit(n) & !Char.IsWhiteSpace(n)))
         {
             throw new Exception("Must be digits and whitespaces!");
         }
@@ -125,7 +125,7 @@ class LZW : StringCompressor
         Console.WriteLine("Compressed data passed validation");
 
         //Inicjalizacja slownika jednoznakowego
-        List<string> workingDict = dict.ToList();
+        List<string> workingDict = dict.Where(n => n != null).ToList();
 
         List<string> codes = data.Split(" ").ToList();
 
@@ -134,9 +134,17 @@ class LZW : StringCompressor
         while (codes.Count>0)
         {
             int code1 = int.Parse(codes[0]);
-            int code2 = int.Parse(codes[1]);
             string word1 = workingDict[code1];
+            if (codes.Count == 1)
+            {
+                result = string.Concat(result, word1);
+                return result;
+            }
+            
+            int code2 = int.Parse(codes[1]);
+            
             string word2 = "";
+
             result = string.Concat(result, word1);
 
             try //ababab case
@@ -168,7 +176,7 @@ class cw4
     static void Main(string[] args)
     {
         LZW lzw = new LZW();
-        var data = lzw.compress("franek poszedl kupic lody, wrocil z kielbasa");
+        var data = lzw.compress("BCBCCABBBCDDDABADDACCCBDCDCCCAADDBDDCDBCBBADCABABBDB\r\nDDDBBCBBDCDDBCABCBABCCBDCBDABCDDADABCABDBBCBBBDCBCAA\r\nDBDBAADACDBBAACDDABADBDABADCDACCDBAACDCBBAACBBABDDCA\r\nCBDAACCCADDDDBDCCCCCBABCCBCCAABADACACCCABAABBABDACCAA\r\nDDBBDDDBBBBACDCDDC");
         
         Console.WriteLine(data);
 
