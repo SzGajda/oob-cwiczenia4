@@ -65,82 +65,37 @@ class LZW : StringCompressor<LZWData>
 
     public LZWData compress(string data)
     {
-
-        var source = data;
-        var dictionary = new List<string>();
-        var resultCode = new List<string>();
-        
-        var mode = 1;
-
+        List<string> dictionary = new List<string>();
+        string wynik = "";
+        string roboczy = data;
         string znak = "";
-        string roboczy = "";
-        string pozostaly = "";
-
-        if (mode == 1)
+        
+        for (int x = 0; roboczy.Length > 0; x++)
         {
-            pozostaly = source;
-            do
+            znak = roboczy.Substring(x, x + 1);
+            if (!dictionary.Contains(znak))
             {
-                roboczy = pozostaly;
-                znak = roboczy.Substring(0, 1);
-                if (!dictionary.Contains(znak))
-                {
-                    dictionary.Add(znak);
-                }
-                pozostaly = roboczy.Remove(0, 1);
+                dictionary.Add(znak);
             }
-            while (pozostaly.Length > 0);
         }
-        else if (mode == 2)
-        {
-            if (mode == 2)
-            {
-                Console.WriteLine("Wydaje się, że albo słownik jest za krótki, " +
-                    "albo w ogóle go nie zdefiniowano!");
-                return new LZWData("", new List<string>());
-            }
-            pozostaly = source;
-        }
-        pozostaly = source;
-        int sequenceLength = 1;
-        int indexNb = 0;
+        int sequenceLength = 2;
+        int nrIndex = 0;
         do
         {
-            roboczy = pozostaly;
-            if (sequenceLength <= roboczy.Length)
+            znak = roboczy.Substring(0, sequenceLength);
+            for (; dictionary.Contains(znak); sequenceLength++)
             {
                 znak = roboczy.Substring(0, sequenceLength);
-                if (dictionary.Contains(znak))
-                {
-                    sequenceLength++;
-                }
-                else
-                {
-                    indexNb = dictionary.IndexOf(roboczy.Substring(0, sequenceLength - 1)) + 1;
-                    resultCode.Add(indexNb.ToString());
-                    dictionary.Add(znak);
-                    pozostaly = roboczy.Remove(0, sequenceLength - 1);
-                    sequenceLength = 1;
-                }
             }
-            else
-            {
-                znak = roboczy.Substring(0, 1);
-                if (dictionary.Contains(znak))
-                {
-                    indexNb = dictionary.IndexOf(znak) + 1;
-                    resultCode.Add(indexNb.ToString());
-                    pozostaly = roboczy.Remove(0, 1);
-                }
-                else
-                {
-                    dictionary.Add(znak);
-                    indexNb = dictionary.IndexOf(roboczy.Substring(0, sequenceLength - 1)) + 1;
-                    resultCode.Add(indexNb.ToString());
-                    pozostaly = roboczy.Remove(0, 1);
-                }
-            }
+            nrIndex = dictionary.IndexOf(roboczy.Substring(0, sequenceLength - 1));
+            wynik += nrIndex;
+            dictionary.Add(znak);
+            roboczy.Remove(0, sequenceLength - 1);
+            sequenceLength = 2;
         }
+        while (roboczy.Length >= sequenceLength)
+
+
         while (pozostaly.Length > 0);
 
         return new LZWData(String.Join(" ", resultCode), dictionary);
