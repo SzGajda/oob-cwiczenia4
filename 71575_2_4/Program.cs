@@ -3,48 +3,37 @@ using System.Collections.Generic;
 using System;
 using System.Collections;
 using System.Threading;
+using System.Linq;
 
 
-class cw4
+interface StringCompressor<T>
 {
-    static void Main(string[] args)
+    T compress(string data);
+    string decompress(T compressedData);
+}
+
+public struct LZWData
+{
+    public LZWData(string data, List<string> dict)
     {
-        string source = "franek poszedl kupic lody, wrocil z kielbasa"; //string do kompresji
-        List<string> dict = new List<string>();   //przygotowujemy pole do slownika
-        List<string> result = new List<string>(); //przygotowujemy pole do wynikow kompresji
-
-        KompresjaLZW(source, ref dict, ref result, mode: 1);
-
-        bool compressionPrint = false; //czy chcemy odczytać wyniki kompresji?
-        if (compressionPrint) 
-        {
-            Console.WriteLine(source);
-            Console.WriteLine("\n\ndict\n\n");
-            dict.ForEach(x => Console.WriteLine(x));
-            Console.WriteLine("result\n\n");
-            result.ForEach(x => Console.WriteLine(x));
-        }
-
-        string compressedStr = String.Join(" ", result); //wyniki kompresji scalamy w jeden string
-        List<string> decompressedStr = new List<string>(); //przygotowujemy pole do wynikow dekompresji
-
-        DekompresjaLZW(compressedStr, ref dict, ref decompressedStr);
-
-        bool decompressionPrint = true; //czy chcemy odczytać wyniki dekompresji?
-        if (decompressionPrint) 
-        {
-            Console.WriteLine(compressedStr);
-            Console.WriteLine("result2\n\n");
-            decompressedStr.ForEach(x => Console.Write(x));
-        }
-        Console.ReadKey(); //w celu zatrzymania konsoli do odczytu wyników
+        compressedData = data;
+        compressionDict = dict;
     }
+    public string compressedData;
+    public List<string> compressionDict;
+}
 
-
-    #region -> KompresjaLZW
-
-    static void KompresjaLZW(string source, ref List<string> dictionary, ref List<string> resultCode, int mode)
+class LZW : StringCompressor<LZWData>
+{
+    public LZWData compress(string data)
     {
+
+        var source = data;
+        var dictionary = new List<string>();
+        var resultCode = new List<string>();
+        
+        var mode = 1;
+
         string znak = "";
         string roboczy = "";
         string pozostaly = "";
@@ -70,7 +59,7 @@ class cw4
             {
                 Console.WriteLine("Wydaje się, że albo słownik jest za krótki, " +
                     "albo w ogóle go nie zdefiniowano!");
-                return;
+                return new LZWData("", new List<string>());
             }
             pozostaly = source;
         }
@@ -115,13 +104,16 @@ class cw4
             }
         }
         while (pozostaly.Length > 0);
+
+        return new LZWData(String.Join(" ", resultCode), dictionary);
     }
-    #endregion
 
-    #region -> Dekompresja LZW
-
-    static void DekompresjaLZW(string source, ref List<string> dictionary, ref List<string> resultCode)
+    public string decompress(LZWData data)
     {
+        var source = data.compressedData;
+        var dictionary = data.compressionDict;
+        var resultCode = new List<string>();
+
         string znak = "";
         string pierwszeSlowoKodowe = "";
         string drugieSlowoKodowe = "";
@@ -255,8 +247,27 @@ class cw4
         }
         while (pozostaly.Length > 0);
 
+        return string.Concat(resultCode);
+    }
+}
+
+
+
+class cw4
+{
+    static void Main(string[] args)
+    {
+        StringCompressor<LZWData> lzw = new LZW();
+        var data = lzw.compress("franek poszedl kupic lody, wrocil z kielbasa");
+        Console.WriteLine(data.GetType);
+        Console.WriteLine(data.compressedData);
+        data.compressionDict.ForEach(x => Console.Write(x));
+        Console.WriteLine();
+
+        var str = lzw.decompress(data);
+        Console.WriteLine(str);
+
+        Console.ReadKey();
 
     }
-    #endregion
-
 }
