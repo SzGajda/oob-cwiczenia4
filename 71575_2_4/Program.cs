@@ -17,7 +17,7 @@ public struct LZWData
     public LZWData(string data, List<string> dict)
     {
         compressedData = data;
-        compressionDict = dict;
+        compressionDict = dict.Where(x => x.Length == 1).ToList(); //Inicjalizacja slownika jednoznakowego
     }
     public string compressedData;
     public List<string> compressionDict;
@@ -25,6 +25,44 @@ public struct LZWData
 
 class LZW : StringCompressor<LZWData>
 {
+    private string[] dict = new string[128];
+    private int index = 0;
+    
+    public LZW(Collection<string> initDict?)
+    {
+        if(initDict != null)
+        {
+            initDict.ForEach(x=> addCode(x));
+        }
+    }
+    
+    private void addCode(string code)
+    {
+        if(code == null)
+        {
+            throw new ArgumentNullException("code is null");
+        }
+        if (dict.Contains(code))
+        {
+            throw new ArgumentException("code already exists");
+        }
+        try
+        {
+            dict[index] = code;
+        }
+        catch (IndexOutOfRangeException e)
+        {
+            if(dict.Length > 1025)
+            {
+                throw new Exception("something wrong");
+            }
+            Console.WriteLine("Extending dict array *2");
+            Array.Resize(ref dict, dict.Length*2);
+            dict[index] = code;
+        }
+        index += 1;
+    }
+
     public LZWData compress(string data)
     {
 
@@ -110,144 +148,41 @@ class LZW : StringCompressor<LZWData>
 
     public string decompress(LZWData data)
     {
-        var source = data.compressedData;
-        var dictionary = data.compressionDict;
-        var resultCode = new List<string>();
-
-        string znak = "";
-        string pierwszeSlowoKodowe = "";
-        string drugieSlowoKodowe = "";
-        string roboczy = "";
-        string pozostaly = "";
-        string tymczasowy = "";
-        string codeTemp = "";
-        List<string> doRaportu = new List<string>();
-
-        pozostaly = source;
-        roboczy = pozostaly;
-
-        do
+        if(data.compressedData == null | data.compressedData.Length==0)
         {
-            if (pierwszeSlowoKodowe == "")
-            {
-                do
-                {
-                    znak = roboczy.Substring(0, 1);
-                    if (!Char.IsDigit(znak[0]))
-                    {
-                        pozostaly = roboczy.Remove(0, 1);
-                        roboczy = pozostaly;
-                    }
-                }
-                while (!Char.IsDigit(znak[0]));
-
-                do
-                {
-                    znak = roboczy.Substring(0, 1);
-                    if (Char.IsDigit(znak[0]))
-                    {
-                        pozostaly = roboczy.Remove(0, 1);
-                        tymczasowy = tymczasowy + znak;
-                        roboczy = pozostaly;
-                    }
-                }
-                while (Char.IsDigit(znak[0]));
-
-                pierwszeSlowoKodowe = dictionary[Convert.ToInt32(tymczasowy) - 1];
-                tymczasowy = "";
-
-            }
-
-            do
-            {
-                znak = roboczy.Substring(0, 1);
-                if (!Char.IsDigit(znak[0]))
-                {
-                    pozostaly = roboczy.Remove(0, 1);
-                    roboczy = pozostaly;
-                }
-
-            }
-            while (!Char.IsDigit(znak[0]));
-
-
-            do
-            {
-                znak = roboczy.Substring(0, 1);
-                if (Char.IsDigit(znak[0]))
-                {
-                    pozostaly = roboczy.Remove(0, 1);
-                    tymczasowy = tymczasowy + znak;
-                    roboczy = pozostaly;
-
-                }
-            }
-            while (Char.IsDigit(znak[0]) && roboczy.Length > 0);
-
-            try
-            {
-                drugieSlowoKodowe = dictionary[Convert.ToInt32(tymczasowy) - 1];
-                tymczasowy = "";
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                doRaportu.Add("> Argument Out Of Range Exception - " + tymczasowy + ", ");
-                drugieSlowoKodowe = pierwszeSlowoKodowe;
-                codeTemp = roboczy;
-                tymczasowy = "";
-
-                do
-                {
-                    znak = roboczy.Substring(0, 1);
-                    if (!Char.IsDigit(znak[0]))
-                    {
-                        pozostaly = roboczy.Remove(0, 1);
-                        roboczy = pozostaly;
-                    }
-                }
-                while (!Char.IsDigit(znak[0]));
-
-                do
-                {
-                    znak = roboczy.Substring(0, 1);
-                    if (Char.IsDigit(znak[0]))
-                    {
-                        pozostaly = roboczy.Remove(0, 1);
-                        tymczasowy = tymczasowy + znak;
-                        roboczy = pozostaly;
-                    }
-
-                }
-                while (Char.IsDigit(znak[0]));
-
-                znak = dictionary[Convert.ToInt32(tymczasowy)];
-                tymczasowy = znak.Substring(0, 1);
-                drugieSlowoKodowe = drugieSlowoKodowe + tymczasowy;
-                roboczy = codeTemp;
-            }
-            if (!dictionary.Contains(pierwszeSlowoKodowe + drugieSlowoKodowe.Substring(0, 1)))
-            {
-                dictionary.Add(pierwszeSlowoKodowe + drugieSlowoKodowe.Substring(0, 1));
-            }
-            resultCode.Add(pierwszeSlowoKodowe);
-
-            if (tymczasowy.Length > 0)
-            {
-                tymczasowy = pierwszeSlowoKodowe + drugieSlowoKodowe.Substring(0, 1);
-                pierwszeSlowoKodowe = tymczasowy;
-                roboczy = codeTemp;
-                tymczasowy = "";
-            }
-            else
-            {
-                pierwszeSlowoKodowe = drugieSlowoKodowe;
-                roboczy = pozostaly;
-            }
-            drugieSlowoKodowe = "";
+            throw new Exception("No data to decompress!");
         }
-        while (pozostaly.Length > 0);
+        if (data.compressionDict == null | data.compressionDict.Count < 2)
+        {
+            throw new Exception("Dictionary null or too short!");
+        }
+        Console.WriteLine("Compressed data passed validation");
 
-        return string.Concat(resultCode);
+        //Inicjalizacja slownika jednoznakowego
+        if (data.compressionDict.Any(x => x.Length > 1))
+        {
+            List<string> dict = data.compressionDict.Where(x => x.Length == 1).ToList();
+        } else
+        {
+            List<string> dict = data.compressionDict;
+        }
+
+        foreach (string key in data.compressionDict)
+        {
+            addCode(key);
+        }
+
+        List<string> workingDict = dict.ToList();
+        string compressedData = data.compressedData;
+
+
+
+
+        
+        
+
+
+         return "";
     }
 }
 
@@ -257,7 +192,7 @@ class cw4
 {
     static void Main(string[] args)
     {
-        StringCompressor<LZWData> lzw = new LZW();
+        LZW lzw = new LZW();
         var data = lzw.compress("franek poszedl kupic lody, wrocil z kielbasa");
         Console.WriteLine(data.GetType);
         Console.WriteLine(data.compressedData);
@@ -266,6 +201,8 @@ class cw4
 
         var str = lzw.decompress(data);
         Console.WriteLine(str);
+
+
 
         Console.ReadKey();
 
