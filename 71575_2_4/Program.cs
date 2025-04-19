@@ -6,36 +6,29 @@ using System.Threading;
 using System.Linq;
 
 
-interface StringCompressor<T>
+interface StringCompressor
 {
-    T compress(string data);
-    string decompress(T compressedData);
+    string compress(string data);
+    string decompress(string compressedData);
 }
 
-public struct LZWData
-{
-    public LZWData(string data, List<string> dict)
-    {
-        compressedData = data;
-        compressionDict = dict.Where(x => x.Length == 1).ToList(); //Inicjalizacja slownika jednoznakowego
-    }
-    public string compressedData;
-    public List<string> compressionDict;
-}
-
-class LZW : StringCompressor<LZWData>
+class LZW : StringCompressor
 {
     private string[] dict = new string[128];
     private int index = 0;
     
-    public LZW(Collection<string> initDict?)
+    public LZW(List<string> initDict)
     {
         if(initDict != null)
         {
             initDict.ForEach(x=> addCode(x));
         }
     }
-    
+
+    public LZW()
+    {
+    }
+
     private void addCode(string code)
     {
         if(code == null)
@@ -63,15 +56,15 @@ class LZW : StringCompressor<LZWData>
         index += 1;
     }
 
-    public LZWData compress(string data)
+    public string compress(string data)
     {
         string wynik = "";
         string roboczy = data;
         string znak = "";
         
-        for (int x = 0; roboczy.Length > 0; x++)
+        for (int x = 0; roboczy.Length > x; x++)
         {
-            znak = roboczy.Substring(x, x + 1);
+            znak = roboczy.Substring(x, 1);
             if (!dict.Contains(znak))
             {
                 addCode(znak);
@@ -90,7 +83,7 @@ class LZW : StringCompressor<LZWData>
                 sequenceLength++;
                 if (sequenceLength > roboczy.Length)
                 {
-                    break
+                    break;
                 }
                 znak = roboczy.Substring(0, sequenceLength);
             }
@@ -99,14 +92,13 @@ class LZW : StringCompressor<LZWData>
             wynik += nrIndex.ToString() + " ";
             if (sequenceLength > roboczy.Length)
             {
-                break
+                break;
             }
             dictionary.Add(znak);
             roboczy.Remove(0, sequenceLength - 1);
             sequenceLength = 2;
 
-        }
-        while (roboczy.Length >= sequenceLength)
+        } while (roboczy.Length >= sequenceLength);
 
         if (roboczy.Length == 1)
         {
@@ -116,14 +108,12 @@ class LZW : StringCompressor<LZWData>
         }
 
 
-        while (pozostaly.Length > 0);
-
-        return new LZWData(String.Join(" ", resultCode), dictionary);
+        return String.Join(" ", wynik);
     }
 
     public string decompress(string data)
     {
-        if(data.compressedData == null | data.compressedData.Length==0)
+        if(data == null | data.Length==0)
         {
             throw new Exception("No data to decompress!");
         }
@@ -158,7 +148,7 @@ class LZW : StringCompressor<LZWData>
 
             if (!workingDict.Contains(string.Concat(word1, word2[0])))
             {
-                workingDict.Add()
+                workingDict.Add(string.Concat(word1, word2[0]));
             } else
             {
                 Console.WriteLine("waht");
@@ -179,10 +169,8 @@ class cw4
     {
         LZW lzw = new LZW();
         var data = lzw.compress("franek poszedl kupic lody, wrocil z kielbasa");
-        Console.WriteLine(data.GetType);
-        Console.WriteLine(data.compressedData);
-        data.compressionDict.ForEach(x => Console.Write(x));
-        Console.WriteLine();
+        
+        Console.WriteLine(data);
 
         var str = lzw.decompress(data);
         Console.WriteLine(str);
